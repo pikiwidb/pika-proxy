@@ -1,6 +1,6 @@
 use super::proxy::Proxy;
-use actix_web::{get, post, route, web, App, HttpResponse, HttpServer, Responder};
-use std::cell::Cell;
+use actix_web::{get, put, web, App, HttpResponse, HttpServer, Responder};
+use serde::Deserialize;
 
 use std::io::Result;
 
@@ -19,82 +19,117 @@ impl ApiServer {
     }
 }
 
-async fn overview() -> impl Responder {
-    HttpResponse::Ok().body("ok")
-}
-
+#[derive(Deserialize)]
 struct Info {
     xauth: String,
     flags: String,
     value: String,
 }
 
-struct Router {}
-impl Router {
-    async fn overview(data: web::Data<ApiServer>) -> impl Responder {
-        HttpResponse::Ok().body("ok")
-    }
+#[get("")]
+async fn overview() -> HttpResponse {
+    HttpResponse::Ok().body("model")
+}
 
-    async fn model(data: web::Data<ApiServer>) -> impl Responder {
-        HttpResponse::Ok().body("model")
-    }
+#[get("/model")]
+async fn model(data: web::Data<ApiServer>) -> impl Responder {
+    HttpResponse::Ok().body("model")
+}
 
-    async fn stats_no_xauth(data: web::Data<ApiServer>) -> impl Responder {
-        HttpResponse::Ok().body("stats_no_xauth")
-    }
+#[get("/stats")]
+async fn stats_no_xauth(data: web::Data<ApiServer>) -> impl Responder {
+    HttpResponse::Ok().body("stats_no_xauth")
+}
 
-    async fn slots_no_xauth(data: web::Data<ApiServer>) -> impl Responder {
-        HttpResponse::Ok().body("slots_no_xauth")
-    }
+#[get("/slots")]
+async fn slots_no_xauth(data: web::Data<ApiServer>) -> impl Responder {
+    HttpResponse::Ok().body("slots_no_xauth")
+}
 
-    async fn x_ping(data: web::Data<ApiServer>, info: web::Path<Info>) -> impl Responder {
-        HttpResponse::Ok().body("x_ping")
-    }
+#[get("/xping/{xauth}")]
+async fn x_ping(data: web::Data<ApiServer>, info: web::Path<Info>) -> impl Responder {
+    HttpResponse::Ok().body("x_ping")
+}
 
-    async fn stats(data: web::Data<ApiServer>, info: web::Path<Info>) -> impl Responder {
-        HttpResponse::Ok().body("stats")
-    }
+// todo: 路由或许要做一些适配
+// #[get("stats/{xauth}")]
+#[get("/stats/{xauth}/{flags}")]
+async fn stats(data: web::Data<ApiServer>, info: web::Path<Info>) -> impl Responder {
+    HttpResponse::Ok().body("stats")
+}
 
-    async fn slots(data: web::Data<ApiServer>, info: web::Path<Info>) -> impl Responder {
-        HttpResponse::Ok().body("slots")
-    }
+#[get("/slots/{xauth}")]
+async fn slots(data: web::Data<ApiServer>, info: web::Path<Info>) -> impl Responder {
+    HttpResponse::Ok().body("slots")
+}
 
-    async fn start(data: web::Data<ApiServer>, info: web::Path<Info>) -> impl Responder {
-        HttpResponse::Ok().body("start")
-    }
+#[put("/start/{xauth}")]
+async fn start(data: web::Data<ApiServer>, info: web::Path<Info>) -> impl Responder {
+    HttpResponse::Ok().body("start")
+}
 
-    async fn reset_stats(data: web::Data<ApiServer>, info: web::Path<Info>) -> impl Responder {
-        HttpResponse::Ok().body("reset_stats")
-    }
+#[put("/stats/reset/{xauth}")]
+async fn reset_stats(data: web::Data<ApiServer>, info: web::Path<Info>) -> impl Responder {
+    HttpResponse::Ok().body("reset_stats")
+}
 
-    async fn force_gc(data: web::Data<ApiServer>, info: web::Path<Info>) -> impl Responder {
-        HttpResponse::Ok().body("force_gc")
-    }
+#[put("/forcegc/{xauth}")]
+async fn force_gc(data: web::Data<ApiServer>, info: web::Path<Info>) -> impl Responder {
+    HttpResponse::Ok().body("force_gc")
+}
 
-    async fn shut_down(data: web::Data<ApiServer>, info: web::Path<Info>) -> impl Responder {
-        HttpResponse::Ok().body("shut_down")
-    }
+#[put("/shutdown/{xauth}")]
+async fn shutdown(data: web::Data<ApiServer>, info: web::Path<Info>) -> impl Responder {
+    HttpResponse::Ok().body("shut_down")
+}
 
-    async fn log_level(data: web::Data<ApiServer>, info: web::Path<Info>) -> impl Responder {
-        HttpResponse::Ok().body("log_level")
-    }
+#[put("/loglevel/{xauth}/{value}")]
+async fn log_level(data: web::Data<ApiServer>, info: web::Path<Info>) -> impl Responder {
+    HttpResponse::Ok().body("log_level")
+}
 
-    async fn fill_slots(data: web::Data<ApiServer>, info: web::Path<Info>) -> impl Responder {
-        HttpResponse::Ok().body("fill_slots")
-    }
+#[put("/fillslots/{xauth}")]
+async fn fill_slots(data: web::Data<ApiServer>, info: web::Path<Info>) -> impl Responder {
+    HttpResponse::Ok().body("fill_slots")
+}
 
-    async fn set_sentinels(data: web::Data<ApiServer>, info: web::Path<Info>) -> impl Responder {
-        HttpResponse::Ok().body("set_sentinels")
-    }
+#[put("/sentinels/{xauth}")]
+async fn set_sentinels(data: web::Data<ApiServer>, info: web::Path<Info>) -> impl Responder {
+    HttpResponse::Ok().body("set_sentinels")
+}
+
+#[put("/sentinels/{xauth}")]
+async fn rewatch_sentinels(data: web::Data<ApiServer>, info: web::Path<Info>) -> impl Responder {
+    HttpResponse::Ok().body("rewatch_sentinels")
 }
 
 // Proxy 表示 pika-proxy 的唯一元数据, 应该是作为全局静态的
 async fn server_admin(proxy: &'static Proxy) -> Result<()> {
-    // let server = new_api_server();
     HttpServer::new(move || {
         App::new()
             .app_data(ApiServer::from_proxy(proxy))
-            .service(web::resource("proxy").route(web::get().to(overview)))
+            .service(
+                web::scope("/proxy")
+                    .service(overview)
+                    .service(model)
+                    .service(stats_no_xauth)
+                    .service(slots_no_xauth),
+            )
+            .service(
+                web::scope("/api/proxy")
+                    .service(model)
+                    .service(x_ping)
+                    .service(stats)
+                    .service(slots)
+                    .service(start)
+                    .service(reset_stats)
+                    .service(force_gc)
+                    .service(shutdown)
+                    .service(log_level)
+                    .service(fill_slots)
+                    .service(set_sentinels)
+                    .service(rewatch_sentinels),
+            )
     })
     .bind("127.0.0.1:8001")?
     .run()
