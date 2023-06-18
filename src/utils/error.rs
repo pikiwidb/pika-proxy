@@ -1,6 +1,7 @@
 use std::io;
 use thiserror::Error;
 
+// todo: 需要完成 Error 的具体设计
 #[derive(Debug, Error)]
 pub enum PikaProxyError {
     #[error("can't not open file: {0}")]
