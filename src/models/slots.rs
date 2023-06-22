@@ -1,4 +1,4 @@
-const max_slot_num: usize = 1024;
+const MAX_SLOT_NUM: usize = 1024;
 
 pub struct Slot {
     id: u64,
