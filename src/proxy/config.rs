@@ -132,12 +132,20 @@ fn parse_string_to_num_and_unit(str: &str) -> (u64, &str) {
 }
 
 impl Config {
-    fn from(path: &str) -> Self {
+    pub fn from_path(path: &str) -> Self {
         let mut f = File::open(path).unwrap();
         let mut content = String::new();
         f.read_to_string(&mut content).unwrap();
         let config: Config = toml::from_str(&content).unwrap();
         config
+    }
+
+    pub fn proxy_addr(&self) -> &str {
+        &self.proxy_addr
+    }
+
+    pub fn admin_addr(&self) -> &str {
+        &self.admin_addr
     }
 }
 
@@ -150,7 +158,7 @@ mod tests {
         let mut root_path = project_root::get_project_root().unwrap();
         root_path.push(path);
         let config_path = root_path.to_str().unwrap();
-        let config = Config::from(config_path);
+        let config = Config::from_path(config_path);
         println!("{:?}", config);
     }
 }
