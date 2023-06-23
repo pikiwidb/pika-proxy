@@ -31,6 +31,4 @@ fn main() {
     let proxy = Proxy::from(&option);
 
     rt.block_on(proxy.serve_proxy());
-
-    // loop {}
 }

@@ -109,6 +109,7 @@ async fn do_task(mut stream: TcpStream) {
             Ok(n) => {
                 println!("{:?}", String::from_utf8((&msg[..n]).to_vec()));
                 let size = buf_stream.write("+OK\r\n".as_bytes()).await.unwrap();
+                buf_stream.flush().await.unwrap();
                 println!("write_size: {}", size);
             }
             Err(e) => break,
