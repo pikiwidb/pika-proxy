@@ -3,11 +3,7 @@ pub mod proxy;
 pub mod utils;
 
 use clap::Parser;
-use proxy::{
-    config::Config,
-    proxy::{Proxy, ProxyOptions},
-};
-use tokio::runtime::Builder;
+use proxy::proxy::{Proxy, ProxyOptions};
 
 #[derive(Parser, Debug)]
 struct Args {

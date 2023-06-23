@@ -1129,6 +1129,7 @@ name = "pika-proxy"
 version = "0.1.0"
 dependencies = [
  "actix-web",
+ "async-trait",
  "clap",
  "crossbeam-channel",
  "etcd-client",

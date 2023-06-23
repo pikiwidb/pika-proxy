@@ -1,4 +1,6 @@
-use std::{net::TcpStream, os::unix::raw::time_t, sync::Once};
+use std::{net::TcpStream, sync::Once};
+
+use std::sync::Arc;
 
 use super::{config::Config, redis::conn::Conn, router::Router};
 
@@ -16,13 +18,18 @@ pub struct Session {
     start: Once,
     exit: Once,
 
-    config: &'static Config,
+    config: Arc<Config>,
 }
 
-impl Session {
-    fn from_config(stream: TcpStream, config: &'static Config) -> Self {
-        Self {
-            conn: Conn::from_stream(stream),
+pub(crate) struct SessionOption {
+    pub(crate) stream: TcpStream,
+    pub(crate) config: Arc<Config>,
+}
+
+impl From<SessionOption> for Session {
+    fn from(option: SessionOption) -> Self {
+        Session {
+            conn: Conn::from(option.stream),
             ops: 0,
             create_time: 0,
             last_op_time: 0,
@@ -30,9 +37,11 @@ impl Session {
             quit: false,
             start: Once::new(),
             exit: Once::new(),
-            config: config,
+            config: Arc::clone(&option.config),
         }
     }
+}
 
-    fn start<T: Router>(&self, router: &T) {}
+impl Session {
+    pub(crate) fn start<T: Router>(&self, router: &T) {}
 }

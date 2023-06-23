@@ -17,4 +17,5 @@ clap = { version = "4.3.5", features = ["derive"] }
 crossbeam-channel = "0.5.8"
 tracing = "0.1.37"
 tracing-subscriber = "0.3.17"
+async-trait = "0.1.68"
 

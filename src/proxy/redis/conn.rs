@@ -7,8 +7,12 @@ pub struct Conn {
     // read_timeout: Duration,
 }
 
-impl Conn {
-    pub fn from_stream(stream: TcpStream) -> Self {
+impl From<TcpStream> for Conn {
+    fn from(stream: TcpStream) -> Self {
         Conn { stream: stream }
     }
+}
+
+impl Conn {
+    pub(crate) fn decode(&self) {}
 }

@@ -4,18 +4,18 @@ use core::str::FromStr;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt, BufReader, BufStream, BufWriter},
+    io::{AsyncReadExt, AsyncWriteExt, BufStream},
     net::{TcpListener, TcpStream},
     sync::{RwLock, RwLockReadGuard, RwLockWriteGuard},
 };
 
 #[derive(Debug)]
 pub struct Proxy {
-    proxy: Arc<RwLock<_Proxy>>,
+    proxy: Arc<RwLock<RawProxy>>,
 }
 
 #[derive(Debug)]
-struct _Proxy {
+struct RawProxy {
     xauth: String,
 
     online: bool,
@@ -24,7 +24,7 @@ struct _Proxy {
     lproxy_addr: SocketAddr,
     ladmin_addr: SocketAddr,
 
-    config: Config,
+    config: Arc<Config>,
 }
 
 pub(crate) struct ProxyOptions {
@@ -34,7 +34,7 @@ pub(crate) struct ProxyOptions {
 impl From<&ProxyOptions> for Proxy {
     fn from(option: &ProxyOptions) -> Self {
         let config = Config::from_path(&option.config_path);
-        let proxy = _Proxy {
+        let proxy = RawProxy {
             xauth: String::new(),
 
             online: false,
@@ -43,7 +43,7 @@ impl From<&ProxyOptions> for Proxy {
             lproxy_addr: SocketAddr::from_str(&config.proxy_addr()).unwrap(),
             ladmin_addr: SocketAddr::from_str(&config.admin_addr()).unwrap(),
 
-            config,
+            config: Arc::new(config),
         };
         Proxy {
             proxy: Arc::new(RwLock::new(proxy)),
@@ -67,11 +67,11 @@ impl Proxy {
         proxy.closed = true;
     }
 
-    async fn r_lock(&self) -> RwLockReadGuard<'_, _Proxy> {
+    async fn r_lock(&self) -> RwLockReadGuard<'_, RawProxy> {
         self.proxy.read().await
     }
 
-    async fn w_lock(&self) -> RwLockWriteGuard<'_, _Proxy> {
+    async fn w_lock(&self) -> RwLockWriteGuard<'_, RawProxy> {
         self.proxy.write().await
     }
 
@@ -108,7 +108,7 @@ async fn do_task(mut stream: TcpStream) {
             Ok(n) if n == 0 => continue,
             Ok(n) => {
                 println!("{:?}", String::from_utf8((&msg[..n]).to_vec()));
-                let size = buf_stream.write("+OK\r\n".as_bytes()).await.unwrap();
+                let size = buf_stream.write("+OK".as_bytes()).await.unwrap();
                 buf_stream.flush().await.unwrap();
                 println!("write_size: {}", size);
             }
