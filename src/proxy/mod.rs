@@ -1,8 +1,15 @@
+pub mod backend;
 pub mod config;
+pub mod delay;
 mod forward;
+pub mod jodis;
+pub mod mapper;
+pub mod metrics;
 pub mod proxy;
 pub mod proxy_api;
 pub mod redis;
 pub mod request;
 pub mod router;
 pub mod session;
+pub mod slot;
+pub mod stats;
