@@ -1,0 +1,30 @@
+name: Cargo Build Test Format
+run-name: ${{ github.actor }} CI build
+
+on:
+  push:
+    branches:
+      - "main"
+      - "releases/**"
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build_and_test:
+    name: Basic CI steps
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        toolchain:
+          - stable
+          # - beta
+          # - nightly
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+      - run: sudo apt install -y protobuf-compiler
+      - run: cargo check --verbose
+      - run: cargo test --verbose
+      - run: cargo fmt --all -- --check
