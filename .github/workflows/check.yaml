@@ -1,0 +1,88 @@
+on:
+  pull_request:
+  push:
+    branches:
+      - "main"
+      - "releases/**"
+
+
+name: Check
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      matrix:
+        arch: [x86_64, aarch64]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          target: ${{ matrix.arch }}-unknown-linux-gnu
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: check
+          args: --all-features --target ${{ matrix.arch }}-unknown-linux-gnu
+
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - run: rustup component add rustfmt
+      - uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      matrix:
+        arch: [x86_64, aarch64]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          components: clippy
+          target: ${{ matrix.arch }}-unknown-linux-gnu
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          use-cross: true
+          command: clippy
+          args: --all-features --all-targets --target ${{ matrix.arch }}-unknown-linux-gnu -- -D warnings
+
+  deny:
+    name: Deny
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        checks:
+          - advisories
+          - bans licenses sources
+
+    # Prevent sudden announcement of a new advisory from failing ci:
+    continue-on-error: ${{ matrix.checks == 'advisories' }}
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: EmbarkStudios/cargo-deny-action@v1
+      with:
+        command: check ${{ matrix.checks }}
+        arguments: --all-features

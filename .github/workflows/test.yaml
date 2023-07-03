@@ -1,0 +1,49 @@
+name: UT
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: self-hosted
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          components: cargo, llvm-tools-preview
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-cargo-dependencies
+        with:
+          path: |
+            ~/.cargo/.crates2.json
+            ~/.cargo/.crates.toml
+            ~/.cargo/registry/
+            ~/.cargo/git/
+            ~/.cargo/bin/
+          key: ${{ runner.os }}-build-${{ env.cache-name }}
+
+      - name: Test pika-proxy
+        run: cargo llvm-cov --all-features -p dbs-address-space --lcov --output-path pika-proxy.info
+      - name: Collection Coverage
+        run: cargo llvm-cov --no-run --lcov --output-path lcov.info
+
+      - name: Save coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage
+          path: ./*.info
+          if-no-files-found: error
