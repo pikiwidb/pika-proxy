@@ -40,8 +40,8 @@ impl Proxy {
             online: false,
             closed: false,
 
-            lproxy_addr: SocketAddr::from_str(&config.proxy_addr()).unwrap(),
-            ladmin_addr: SocketAddr::from_str(&config.admin_addr()).unwrap(),
+            lproxy_addr: SocketAddr::from_str(&config.proxy.addr).unwrap(),
+            ladmin_addr: SocketAddr::from_str(&config.proxy.admin_addr).unwrap(),
 
             config: Arc::new(config),
         };
