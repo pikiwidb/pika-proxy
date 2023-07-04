@@ -51,3 +51,33 @@ jobs:
           name: coverage
           path: ./*.info
           if-no-files-found: error
+
+  upload_codecov:
+    runs-on: ubuntu-latest
+    needs: test
+    continue-on-error: true
+    strategy:
+      matrix:
+        crate: [pika-proxy]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Download coverage
+        uses: actions/download-artifact@v3
+        with:
+          name: coverage
+
+      - name: Upload to CodeCov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ${{ matrix.crate }}.info
+          flags: ${{ matrix.crate }}
+          fail_ci_if_error: true
+
+      - name: Upload sum to CodeCov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./lcov.info
+          fail_ci_if_error: true
