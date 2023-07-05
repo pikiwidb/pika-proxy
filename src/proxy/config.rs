@@ -160,8 +160,7 @@ mod tests {
         let path = "config/proxy.toml";
         let mut root_path = project_root::get_project_root().unwrap();
         root_path.push(path);
-        let config_path = root_path.to_str().unwrap();
-        let config = Config::from_path(config_path).unwrap();
+        let config = Config::from_path(root_path).unwrap();
         assert_eq!(config.admin_addr, "0.0.0.0:11080");
         assert_eq!(config.proxy_addr, "127.0.0.1:19000")
     }
