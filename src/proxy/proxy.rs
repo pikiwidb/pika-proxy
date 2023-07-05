@@ -32,8 +32,8 @@ pub(crate) struct ProxyOptions {
 }
 
 impl From<&ProxyOptions> for Proxy {
-    fn from(option: &ProxyOptions) -> Self {
-        let config = Config::from_path(&option.config_path);
+    fn from(option: &ProxyOptions) -> Proxy {
+        let config = Config::from_path(&option.config_path).unwrap();
         let proxy = RawProxy {
             xauth: String::new(),
 

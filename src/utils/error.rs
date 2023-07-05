@@ -9,7 +9,9 @@ pub enum PikaProxyError {
     #[error("can't not open file: {0}")]
     FailedOpenDB(String),
     #[error("IO error: {0}")]
-    Io(#[source] Box<io::Error>),
+    Io(#[from] io::Error),
+    #[error("Parsing error: {0}")]
+    ParseError(#[from] toml::de::Error),
     #[error("unexpected error: {0}")]
     UnexpectedError(String),
     #[error("key or value size is invalid")]

@@ -1,5 +1,7 @@
 use serde::{de, Deserialize, Deserializer, Serialize};
-use std::{fs::File, io::Read, time::Duration};
+use std::{fs::File, io::Read, path::Path, time::Duration};
+
+use crate::utils::error::Result as PikaProxyResult;
 
 const KB: u64 = 1024;
 const MB: u64 = 1024 * KB;
@@ -132,12 +134,12 @@ fn parse_string_to_num_and_unit(str: &str) -> (u64, &str) {
 }
 
 impl Config {
-    pub fn from_path(path: &str) -> Self {
-        let mut f = File::open(path).unwrap();
+    pub fn from_path<P: AsRef<Path>>(path: P) -> PikaProxyResult<Self> {
+        let mut f = File::open(path)?;
         let mut content = String::new();
-        f.read_to_string(&mut content).unwrap();
-        let config: Config = toml::from_str(&content).unwrap();
-        config
+        f.read_to_string(&mut content)?;
+        let config: Config = toml::from_str(&content)?;
+        Ok(config)
     }
 
     pub fn proxy_addr(&self) -> &str {
@@ -149,16 +151,17 @@ impl Config {
     }
 }
 
+#[cfg(test)]
 mod tests {
-    use crate::proxy::config::Config;
+    use super::Config;
 
     #[test]
     fn test_config() {
         let path = "config/proxy.toml";
         let mut root_path = project_root::get_project_root().unwrap();
         root_path.push(path);
-        let config_path = root_path.to_str().unwrap();
-        let config = Config::from_path(config_path);
-        println!("{:?}", config);
+        let config = Config::from_path(root_path).unwrap();
+        assert_eq!(config.admin_addr, "0.0.0.0:11080");
+        assert_eq!(config.proxy_addr, "127.0.0.1:19000")
     }
 }
