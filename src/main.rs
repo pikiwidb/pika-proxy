@@ -1,3 +1,4 @@
+pub mod error;
 pub mod models;
 pub mod proxy;
 pub mod utils;
@@ -24,7 +25,7 @@ fn main() {
         .build() // 创建runtime
         .unwrap();
 
-    let proxy = Proxy::from(&option);
+    let proxy = Proxy::new(&option).unwrap();
 
     rt.block_on(proxy.serve_proxy());
 }

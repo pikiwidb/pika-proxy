@@ -1,7 +1,7 @@
+use crate::error::config::ConfigError;
+use crate::error::Result;
 use serde::{de, Deserialize, Deserializer, Serialize};
-use std::{fs::File, io::Read, path::Path, time::Duration};
-
-use crate::utils::error::Result as PikaProxyResult;
+use std::{path::Path, time::Duration};
 
 const KB: u64 = 1024;
 const MB: u64 = 1024 * KB;
@@ -84,7 +84,7 @@ pub struct Config {
     metrics_report_stats_prefix: String,
 }
 
-fn deserialize_string_to_size<'de, D>(deserializer: D) -> Result<u64, D::Error>
+fn deserialize_string_to_size<'de, D>(deserializer: D) -> std::result::Result<u64, D::Error>
 where
     D: Deserializer<'de>,
 {
@@ -100,7 +100,9 @@ where
     }
 }
 
-fn deserialize_string_to_duration<'de, D>(deserializer: D) -> Result<Duration, D::Error>
+fn deserialize_string_to_duration<'de, D>(
+    deserializer: D,
+) -> std::result::Result<Duration, D::Error>
 where
     D: Deserializer<'de>,
 {
@@ -134,12 +136,9 @@ fn parse_string_to_num_and_unit(str: &str) -> (u64, &str) {
 }
 
 impl Config {
-    pub fn from_path<P: AsRef<Path>>(path: P) -> PikaProxyResult<Self> {
-        let mut f = File::open(path)?;
-        let mut content = String::new();
-        f.read_to_string(&mut content)?;
-        let config: Config = toml::from_str(&content)?;
-        Ok(config)
+    pub fn from_path<P: AsRef<Path>>(path: P) -> Result<Self> {
+        let content = std::fs::read_to_string(path)?;
+        Ok(toml::from_str(&content).map_err(ConfigError::ParseToml)?)
     }
 
     pub fn proxy_addr(&self) -> &str {
@@ -157,11 +156,10 @@ mod tests {
 
     #[test]
     fn test_config() {
-        let path = "config/proxy.toml";
-        let mut root_path = project_root::get_project_root().unwrap();
-        root_path.push(path);
-        let config = Config::from_path(root_path).unwrap();
-        assert_eq!(config.admin_addr, "0.0.0.0:11080");
-        assert_eq!(config.proxy_addr, "127.0.0.1:19000")
+        let mut config_path = project_root::get_project_root().unwrap();
+        config_path.push("config/proxy.toml");
+        let config = Config::from_path(config_path).unwrap();
+        assert_eq!(config.proxy_addr(), "127.0.0.1:19000");
+        assert_eq!(config.admin_addr(), "0.0.0.0:11080");
     }
 }
