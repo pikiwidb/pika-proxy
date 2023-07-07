@@ -127,14 +127,14 @@ where
     D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
-    let (size_num, unit) = parse_string_to_num_and_unit(&s);
+    let (size_num, unit) = parse_string_to_num_and_unit(&s)?;
     match unit {
         "kb" => Ok(size_num * KB),
         "mb" => Ok(size_num * MB),
         "gb" => Ok(size_num * GB),
         "tb" => Ok(size_num * TB),
         "pb" => Ok(size_num * PB),
-        &_ => Err(de::Error::missing_field("size")),
+        _ => Err(de::Error::missing_field("size")),
     }
 }
 
@@ -145,32 +145,32 @@ where
     D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
-    let (time_num, unit) = parse_string_to_num_and_unit(&s);
+    let (time_num, unit) = parse_string_to_num_and_unit(&s)?;
     match unit {
         "m" => Ok(Duration::from_secs(time_num * 60)),
         "s" => Ok(Duration::from_secs(time_num)),
         "ms" => Ok(Duration::from_millis(time_num)),
         "us" => Ok(Duration::from_micros(time_num)),
         "ns" => Ok(Duration::from_nanos(time_num)),
-        &_ => Err(de::Error::missing_field("duration")),
+        _ => Err(de::Error::missing_field("duration")),
     }
 }
 
-fn parse_string_to_num_and_unit(str: &str) -> (u64, &str) {
-    let mut num_length = 0;
-    let mut num_str = String::new();
-    for c in str.chars() {
-        match c {
-            '0'..='9' => {
-                num_str.push(c);
-                num_length += 1;
-            }
-            _ => {}
-        }
+fn parse_string_to_num_and_unit<E: de::Error>(s: &str) -> std::result::Result<(u64, &str), E> {
+    if !s.starts_with(char::is_numeric) {
+        return Err(E::custom("missing number in configuration"));
     }
-    let num = num_str.parse::<u64>().unwrap();
-    let unit = &str[num_length..];
-    (num, unit)
+
+    let (h, u) = s.split_at(
+        s.chars()
+            .position(|x| x.is_alphabetic())
+            .ok_or_else(|| E::custom("expecting unit in configuration"))?,
+    );
+    Ok((
+        h.parse()
+            .map_err(|e| E::custom(format!("parsing number error: {}", e)))?,
+        u,
+    ))
 }
 
 impl Config {
@@ -182,7 +182,7 @@ impl Config {
 
 #[cfg(test)]
 mod tests {
-    use super::Config;
+    use super::*;
 
     #[test]
     fn test_config() {
@@ -191,5 +191,53 @@ mod tests {
         let config = Config::from_path(config_path).unwrap();
         assert_eq!(config.proxy.addr, "127.0.0.1:19000");
         assert_eq!(config.backend.recv_bufsize, 128 * 1024);
+    }
+
+    #[test]
+    fn test_deserialize_string_to_size() {
+        assert_eq!(
+            10 * KB,
+            deserialize_string_to_size(toml::Value::String("10kb".into())).unwrap()
+        );
+        assert_eq!(
+            10 * MB,
+            deserialize_string_to_size(toml::Value::String("10mb".into())).unwrap()
+        );
+        assert_eq!(
+            10 * GB,
+            deserialize_string_to_size(toml::Value::String("10gb".into())).unwrap()
+        );
+        assert_eq!(
+            10 * TB,
+            deserialize_string_to_size(toml::Value::String("10tb".into())).unwrap()
+        );
+        assert!(deserialize_string_to_size(toml::Value::String("kb".into())).is_err());
+        assert!(deserialize_string_to_size(toml::Value::String("10".into())).is_err());
+    }
+
+    #[test]
+    fn test_deserialize_string_to_duration() {
+        assert_eq!(
+            Duration::from_secs(10 * 60),
+            deserialize_string_to_duration(toml::Value::String("10m".into())).unwrap()
+        );
+        assert_eq!(
+            Duration::from_secs(10),
+            deserialize_string_to_duration(toml::Value::String("10s".into())).unwrap()
+        );
+        assert_eq!(
+            Duration::from_millis(10),
+            deserialize_string_to_duration(toml::Value::String("10ms".into())).unwrap()
+        );
+        assert_eq!(
+            Duration::from_micros(10),
+            deserialize_string_to_duration(toml::Value::String("10us".into())).unwrap()
+        );
+        assert_eq!(
+            Duration::from_nanos(10),
+            deserialize_string_to_duration(toml::Value::String("10ns".into())).unwrap()
+        );
+        assert!(deserialize_string_to_size(toml::Value::String("ms".into())).is_err());
+        assert!(deserialize_string_to_size(toml::Value::String("10".into())).is_err());
     }
 }
