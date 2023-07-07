@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use super::forward::ForwardMethod;
 use super::request::Request;
+use crate::error::{Error, Result};
 use crate::models::slots::Slot;
-use crate::utils::error::{PikaProxyError, Result};
 use crate::utils::redis::InfoCache;
 
 pub trait Router {

@@ -1,5 +1,5 @@
 use super::config::Config;
-use crate::utils::error::{PikaProxyError, Result};
+use crate::error::Result;
 use core::str::FromStr;
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -31,9 +31,9 @@ pub(crate) struct ProxyOptions {
     pub(crate) config_path: String,
 }
 
-impl From<&ProxyOptions> for Proxy {
-    fn from(option: &ProxyOptions) -> Proxy {
-        let config = Config::from_path(&option.config_path).unwrap();
+impl Proxy {
+    pub(crate) fn new(option: &ProxyOptions) -> Result<Self> {
+        let config = Config::from_path(&option.config_path)?;
         let proxy = RawProxy {
             xauth: String::new(),
 
@@ -45,9 +45,9 @@ impl From<&ProxyOptions> for Proxy {
 
             config: Arc::new(config),
         };
-        Proxy {
+        Ok(Proxy {
             proxy: Arc::new(RwLock::new(proxy)),
-        }
+        })
     }
 }
 
@@ -100,7 +100,7 @@ async fn listen(addr: &SocketAddr) {
 }
 
 // 简单的打印服务器
-async fn do_task(mut stream: TcpStream) {
+async fn do_task(stream: TcpStream) {
     let mut buf_stream = BufStream::new(stream);
     let mut msg = vec![0; 1024];
     loop {
@@ -112,7 +112,7 @@ async fn do_task(mut stream: TcpStream) {
                 buf_stream.flush().await.unwrap();
                 println!("write_size: {}", size);
             }
-            Err(e) => break,
+            Err(_e) => break,
         }
     }
 }
