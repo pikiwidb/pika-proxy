@@ -1,0 +1,12 @@
+[package]
+name = "redis"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tokio.workspace = true
+tracing.workspace = true
+anyhow = "1.0.71"
+redis-protocol = "4.1.0"
