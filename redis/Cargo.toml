@@ -8,5 +8,6 @@ edition = "2021"
 [dependencies]
 tokio.workspace = true
 tracing.workspace = true
-anyhow = "1.0.71"
+anyhow.workspace = true
+thiserror.workspace = true
 redis-protocol = "4.1.0"

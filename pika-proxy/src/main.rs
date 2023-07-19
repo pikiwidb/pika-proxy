@@ -1,10 +1,11 @@
-pub mod error;
-pub mod models;
-pub mod proxy;
-pub mod utils;
-
 use clap::Parser;
-use proxy::proxy::{Proxy, ProxyOptions};
+
+use proxy::server::{ProxyOptions, ProxyServer};
+
+mod error;
+mod models;
+mod proxy;
+mod utils;
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -19,13 +20,12 @@ fn main() {
         config_path: args.config_path,
     };
     let rt = tokio::runtime::Builder::new_multi_thread()
-        .worker_threads(8) // 8个工作线程
+        .worker_threads(num_cpus::get()) // cpu*2个工作线程
         .enable_io() // 可在runtime中使用异步IO
         .enable_time() // 可在runtime中使用异步计时器(timer)
         .build() // 创建runtime
         .unwrap();
-
-    let proxy = Proxy::new(&option).unwrap();
-
-    rt.block_on(proxy.serve_proxy());
+    let mut proxy = ProxyServer::new(&option).expect("server config error");
+    rt.block_on(proxy.serve_proxy())
+        .expect("unhandled fatal error");
 }
