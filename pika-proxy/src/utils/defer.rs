@@ -1,5 +1,4 @@
 /// Defers evaluation of a block of code until the end of the scope.
-
 #[macro_export]
 macro_rules! defer {
     ($($body:tt)*) => {

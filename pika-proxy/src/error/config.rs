@@ -1,5 +1,6 @@
-use thiserror::Error;
 use toml;
+
+use thiserror::Error;
 
 pub type Result<T> = std::result::Result<T, ConfigError>;
 
