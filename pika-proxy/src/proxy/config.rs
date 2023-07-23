@@ -1,15 +1,29 @@
-use std::{path::Path, time::Duration};
-
 use serde::{de, Deserialize, Deserializer, Serialize};
+use std::{path::Path, time::Duration};
+use thiserror::Error;
 
-use crate::error::config::ConfigError;
-use crate::error::Result;
+use crate::error::Error;
 
 const KB: u64 = 1024;
 const MB: u64 = 1024 * KB;
 const GB: u64 = 1024 * MB;
 const TB: u64 = 1024 * GB;
 const PB: u64 = 1024 * TB;
+
+#[derive(Error, Debug)]
+pub enum ConfigError {
+    #[error("config file format error")]
+    ParseToml(#[from] toml::de::Error),
+    #[error("can not read config file")]
+    ReadFile(#[from] std::io::Error),
+}
+
+type Result<T> = std::result::Result<T, ConfigError>;
+impl From<ConfigError> for Error {
+    fn from(err: ConfigError) -> Self {
+        Error::initialize(err)
+    }
+}
 
 /// configuration for session
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -176,7 +190,7 @@ fn parse_string_to_num_and_unit<E: de::Error>(s: &str) -> std::result::Result<(u
 impl Config {
     pub fn from_path<P: AsRef<Path>>(path: P) -> Result<Self> {
         let content = std::fs::read_to_string(path)?;
-        Ok(toml::from_str(&content).map_err(ConfigError::ParseToml)?)
+        Ok(toml::from_str(&content)?)
     }
 }
 

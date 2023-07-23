@@ -68,7 +68,9 @@ impl ProxyServer {
     pub async fn serve_proxy(&mut self) -> Result<()> {
         // 这里需要一条启动 log
         info!("listen will on {:?}", self.config.proxy.addr);
-        let listener = TcpListener::bind(&self.config.proxy.addr).await?;
+        let listener = TcpListener::bind(&self.config.proxy.addr)
+            .await
+            .map_err(Error::server)?;
         while let Ok((conn, addr)) = listener.accept().await {
             tracing::debug!("new client connection from {}", addr);
             self.proxy_metrics
