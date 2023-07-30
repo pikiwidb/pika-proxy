@@ -1,4 +1,6 @@
+use redis_utils::RedisResp;
+
 pub struct Response {
-    redis: redis::RedisResp,
+    redis: RedisResp,
     id: u64,
 }

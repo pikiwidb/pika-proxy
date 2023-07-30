@@ -9,6 +9,8 @@ use tokio::{
     sync::mpsc::{Receiver, Sender},
 };
 
+use redis_utils::RedisRequestReader;
+
 use crate::models::Response;
 
 use crate::error::Result;
@@ -60,7 +62,7 @@ impl ClientSession {
     ) -> JoinHandle<u64> {
         tokio::spawn(async move {
             let mut max_id = 0u64;
-            let mut request_reader = redis::RedisRequestReader::new(client_reader);
+            let mut request_reader = RedisRequestReader::new(client_reader);
             loop {
                 match request_reader.read_request().await {
                     Ok(request) => {

@@ -1,5 +1,5 @@
 [package]
-name = "redis"
+name = "redis-utils"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,7 +7,10 @@ edition = "2021"
 
 [dependencies]
 tokio.workspace = true
+tokio-test.workspace = true
 tracing.workspace = true
 anyhow.workspace = true
 thiserror.workspace = true
-redis-protocol = "4.1.0"
+redis = "0.23.0"
+mockall = "0.11.4"
+async-recursion = "1.0.4"
