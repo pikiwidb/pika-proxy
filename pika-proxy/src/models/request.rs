@@ -1,4 +1,6 @@
+use redis_utils::command::RedisCmd;
+
 pub struct Request {
-    redis: redis::RedisCmd,
+    redis: RedisCmd,
     id: u64,
 }

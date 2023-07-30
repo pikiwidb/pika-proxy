@@ -42,6 +42,8 @@ jobs:
 
       - name: Test pika-proxy
         run: cargo llvm-cov -p pika-proxy --lcov --output-path pika-proxy.info
+      - name: Test redis-utils
+        run: cargo llvm-cov -p redis-utils --lcov --output-path redis-utils.info
       - name: Collection Coverage
         run: cargo llvm-cov --no-run --lcov --output-path lcov.info
 
@@ -58,7 +60,7 @@ jobs:
     continue-on-error: true
     strategy:
       matrix:
-        crate: [pika-proxy]
+        crate: [pika-proxy, redis-utils]
 
     steps:
       - uses: actions/checkout@v3
